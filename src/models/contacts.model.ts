@@ -9,8 +9,9 @@ class Contact extends Model {
   public name!: string;
   public address!: string;
   public email!: string;
-  public cellphoneNumber!: string;
-  public profilePicture!: string;
+  public phone!: string;
+  public photo!: string;
+  public profession!: string;
   public userId!: string;
 }
 
@@ -33,11 +34,15 @@ Contact.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    cellphoneNumber: {
+    phone: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    profilePicture: {
+    photo: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    profession: {
       type: DataTypes.STRING,
       allowNull: true,
     },

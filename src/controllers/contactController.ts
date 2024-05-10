@@ -60,14 +60,14 @@ export async function getContacts(req: Request, res: Response) {
 export async function createContact(req: Request, res: Response) {
   try {
     const userId = req.user.userId;
-    const { name, address, email, cellphoneNumber, profilePicture } = req.body;
+    const { name, address, email, phone, photo } = req.body;
 
     const newContact = await Contact.create({
       name,
       address,
       email,
-      cellphoneNumber,
-      profilePicture,
+      phone,
+      photo,
       userId,
     });
 
@@ -81,7 +81,7 @@ export async function createContact(req: Request, res: Response) {
 export async function updateContact(req: Request, res: Response) {
   try {
     const { contactId } = req.params; // Obtener el ID del contacto de los parámetros de la URL
-    const { name, address, email, cellphoneNumber, profilePicture } = req.body;
+    const { name, address, email, phone, photo } = req.body;
 
     // Verificar si el contacto existe
     const existingContact = await Contact.findByPk(contactId);
@@ -93,8 +93,8 @@ export async function updateContact(req: Request, res: Response) {
     existingContact.name = name;
     existingContact.address = address;
     existingContact.email = email;
-    existingContact.cellphoneNumber = cellphoneNumber;
-    existingContact.profilePicture = profilePicture;
+    existingContact.phone = phone;
+    existingContact.photo = photo;
 
     // Guardar los cambios en la base de datos
     await existingContact.save();

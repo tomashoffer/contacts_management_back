@@ -52,7 +52,7 @@ export async function loginUser(req: Request, res: Response) {
     }
 
     // Genera el token JWT
-    const token = jwt.sign({ userId: user.id }, jwtSecret!, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user.id }, jwtSecret!, { expiresIn: '3h' });
 
     res.status(200).json({ token });
   } catch (error) {
