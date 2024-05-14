@@ -11,7 +11,7 @@ if (!jwtSecret) {
 export async function registerUser(req: Request, res: Response) {
     try {
       const { email, password, username } = req.body;
-  
+
       // Check if the user is already registered
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
@@ -27,7 +27,7 @@ export async function registerUser(req: Request, res: Response) {
   
       // Generate token JWT
       const token = jwt.sign({ userId: newUser.id }, jwtSecret!, { expiresIn: '1h' });
-  
+
       res.status(201).json({ token });
     } catch (error) {
       console.error('Error in registration:', error);
@@ -53,8 +53,12 @@ export async function loginUser(req: Request, res: Response) {
 
     // Genera el token JWT
     const token = jwt.sign({ userId: user.id }, jwtSecret!, { expiresIn: '3h' });
-
-    res.status(200).json({ token });
+    const userData = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    };
+    res.status(200).json({ token, userData });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login error' });

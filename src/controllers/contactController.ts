@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Contact from '../models/contacts.model';
 import stream from 'stream';
 import path from 'path';
+import { Op } from 'sequelize';
 import { google } from "googleapis";
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -35,13 +36,11 @@ const auth = new google.auth.GoogleAuth({
 
 export async function getContacts(req: Request, res: Response) {
   try {
-    const userId = req.user.userId;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const offset = (page - 1) * limit;
 
     const contacts = await Contact.findAndCountAll({
-      where: { userId },
       limit,
       offset,
     });
@@ -60,7 +59,7 @@ export async function getContacts(req: Request, res: Response) {
 export async function createContact(req: Request, res: Response) {
   try {
     const userId = req.user.userId;
-    const { name, address, email, phone, photo } = req.body;
+    const { name, address, email, phone, photo, profession } = req.body;
 
     const newContact = await Contact.create({
       name,
@@ -69,6 +68,7 @@ export async function createContact(req: Request, res: Response) {
       phone,
       photo,
       userId,
+      profession
     });
 
     res.status(201).json(newContact);
@@ -81,7 +81,7 @@ export async function createContact(req: Request, res: Response) {
 export async function updateContact(req: Request, res: Response) {
   try {
     const { contactId } = req.params; // Obtener el ID del contacto de los parámetros de la URL
-    const { name, address, email, phone, photo } = req.body;
+    const { name, address, email, phone, photo, profession } = req.body;
 
     // Verificar si el contacto existe
     const existingContact = await Contact.findByPk(contactId);
@@ -95,36 +95,64 @@ export async function updateContact(req: Request, res: Response) {
     existingContact.email = email;
     existingContact.phone = phone;
     existingContact.photo = photo;
+    existingContact.profession = profession;
 
     // Guardar los cambios en la base de datos
-    await existingContact.save();
+    const user = await existingContact.save();
 
-    res.status(200).json({ message: 'Contact correctly updated' });
+    res.status(200).json({ user });
   } catch (error) {
     console.error('Error updating the contact:', error);
     res.status(500).json({ error: 'Error updating contact' });
   }
 }
 
-export async function uploadFile(file: Express.Multer.File) {
+export const searchContactsByName = async (req: Request, res: Response) => {
   try {
-    console.log('Uploading file',file)
-    const bufferStream = new stream.PassThrough();
-    bufferStream.end(file.buffer);
-    const { data } = await google.drive({ version: "v3", auth }).files.create({
-        media: {
-            mimeType: file.mimetype,
-            body: bufferStream,
-        },
-        requestBody: {
-            name: file.originalname,
-            parents: ["1vjSNVBM7nLVRXtPQwAi3Q4tixGiRCvVH"],
-        },
-        fields: "id,name,webViewLink",
+    const { name } = req.query;
+
+    if (!name) {
+      return [];
+    }
+
+    const contacts = await Contact.findAll({
+      where: {
+        name: { [Op.iLike]: `%${name}%` }
+      }
     });
-    return data.webViewLink;
+
+    if (!contacts.length) {
+      return res.status(404).json({ message: "No contacts found with the provided name." });
+    }
+
+    res.status(200).json({ contacts });
   } catch (error) {
-    console.error('Error uploading file:', error);
-    throw new Error('Error uploading file');
+    console.error(error);
+    res.status(500).json({ message: "Internal server error." });
   }
-}
+};
+
+export const getContactById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.query;
+
+    if (!id) {
+      return res.status(400).json({ message: "Missing id parameter." });
+    }
+
+    const contact = await Contact.findOne({
+      where: {
+       id
+      }
+    });
+
+    if (!contact) {
+      return res.status(404).json({ message: "No contact found with the provided id." });
+    }
+
+    return res.status(200).json(contact); // Devolver directamente el objeto contact
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
