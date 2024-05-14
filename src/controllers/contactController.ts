@@ -1,38 +1,9 @@
 import { Request, Response } from 'express';
 import Contact from '../models/contacts.model';
-import stream from 'stream';
-import path from 'path';
 import { Op } from 'sequelize';
-import { google } from "googleapis";
-import fs from 'fs';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const KEYFILEPATH = path.join(__dirname, "../../key.json");
-const SCOPES = ["https://www.googleapis.com/auth/drive"];
-
-const credentials = JSON.parse(fs.readFileSync(KEYFILEPATH, 'utf8'));
-
-if (!process.env.PRIVATE_KEY || !process.env.PRIVATE_KEY_ID) {
-    throw new Error('PRIVATE_KEY and PRIVATE_KEY_ID env variables must be defined');
-}
-
-credentials.private_key_id = process.env.PRIVATE_KEY_ID;
-credentials.private_key = process.env.PRIVATE_KEY;
-credentials.type = process.env.TYPE;
-credentials.project_id = process.env.PROJECT_ID;
-credentials.client_email = process.env.CLIENT_EMAIL;
-credentials.client_id = process.env.CLIENT_ID;
-credentials.auth_uri = process.env.AUTH_URI;
-credentials.token_uri = process.env.TOKEN_URI;
-credentials.auth_provider_x509_cert_url = process.env.AUTH_PROVIDER;
-credentials.client_x509_cert_url = process.env.CLIENT_CERT_URL;
-credentials.universe_domain = process.env.UNIVERSE_DOMAIN;
-
-const auth = new google.auth.GoogleAuth({
-    credentials: credentials, 
-    scopes: SCOPES,           
-});
 
 export async function getContacts(req: Request, res: Response) {
   try {
@@ -58,7 +29,6 @@ export async function getContacts(req: Request, res: Response) {
 
 export async function createContact(req: Request, res: Response) {
   try {
-    const userId = req.user.userId;
     const { name, address, email, phone, photo, profession } = req.body;
 
     const newContact = await Contact.create({
@@ -67,7 +37,6 @@ export async function createContact(req: Request, res: Response) {
       email,
       phone,
       photo,
-      userId,
       profession
     });
 
@@ -80,16 +49,14 @@ export async function createContact(req: Request, res: Response) {
 
 export async function updateContact(req: Request, res: Response) {
   try {
-    const { contactId } = req.params; // Obtener el ID del contacto de los parámetros de la URL
+    const { contactId } = req.params;
     const { name, address, email, phone, photo, profession } = req.body;
 
-    // Verificar si el contacto existe
     const existingContact = await Contact.findByPk(contactId);
     if (!existingContact) {
       return res.status(404).json({ error: 'Contact does not exist' });
     }
 
-    // Actualizar los campos del contacto
     existingContact.name = name;
     existingContact.address = address;
     existingContact.email = email;
@@ -97,7 +64,6 @@ export async function updateContact(req: Request, res: Response) {
     existingContact.photo = photo;
     existingContact.profession = profession;
 
-    // Guardar los cambios en la base de datos
     const user = await existingContact.save();
 
     res.status(200).json({ user });

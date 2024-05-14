@@ -7,11 +7,9 @@ const router = express.Router();
 router.post('/register', async (req: Request, res: Response) => {
   await registerUser(req, res);
 });
-
 router.post('/login', async (req: Request, res: Response) => {
   await loginUser(req, res);
 });
-
 router.get('/user', authenticateToken, getUserInfo); 
 
 export default router;
